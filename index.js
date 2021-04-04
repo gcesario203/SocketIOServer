@@ -1,20 +1,18 @@
-const app = require('express')();
-const http = require('http').Server(app);
-const { EventConstants } = require('./src/config/constants.js')
-const io = require('socket.io')(http, {
+var io = require('socket.io')(4001,{
+    path:'/',
     cors: {
         origin: "*",
-    }
-});
-
-app.get('/', (req, res) => {
-    res.send('<h1>Conectado com sucesso</h1>')
+        methods: ["GET", "POST"]
+      }
 })
-
-io.on(EventConstants.CONNECTION, (socket) => {
-    io.emit(EventConstants.NO_OF_CONNECTIONS, Object.keys(io.sockets.connected).length)
+const {EventConstants} = require('./src/config/constants.js')
 
 
+io.httpServer.on(EventConstants.LISTENING, function () {
+  console.log('listening on port', io.httpServer.address().port)
+
+  io.on(EventConstants.CONNECTION,socket=>
+  {
     socket.on(EventConstants.DISCONNECT, () => {
         io.emit(EventConstants.NO_OF_CONNECTIONS, Object.keys(io.sockets.connected).length)
     })
@@ -36,13 +34,8 @@ io.on(EventConstants.CONNECTION, (socket) => {
         socket.broadcast.emit(EventConstants.STOP_TYPING)
     })
 
-    socket.on(EventConstants.PING_SERVER,()=> {
+    socket.on(EventConstants.PING_SERVER, () => {
         console.log('chegou aqui')
     })
-
-
-})
-
-http.listen(3000, () => {
-    console.log('Server is started at http://localhost:3000')
+  })
 })
