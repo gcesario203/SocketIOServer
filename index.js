@@ -8,36 +8,49 @@ var io = require('socket.io')(4001, {
 const { EventConstants } = require('./src/config/constants.js')
 
 
-io.httpServer.on(EventConstants.LISTENING, function () {
-    console.log('listening on port', io.httpServer.address().port)
 
-    io.on(EventConstants.CONNECTION, socket => {
-        console.log('id do socket ==> ', socket.id)
-        socket.on(EventConstants.CHAT_MESSAGE, (msg) => {
-            socket.broadcast.emit(EventConstants.CHAT_MESSAGE, msg)
-        })
+io.on(EventConstants.CONNECTION, socket => {
+    socket.join('test room')
 
-        socket.on(EventConstants.DISCONNECT, teste =>
-            {
-                console.log('kk sai')
-            })
+    socket.on(EventConstants.CHAT_MESSAGE, (msg) => {
+        socket.broadcast.to('test room').emit(EventConstants.CHAT_MESSAGE, msg)
+    })
+
+    socket.on(EventConstants.DISCONNECT, () => {
+        if(typeof io.sockets.adapter.rooms.get('test room') !== 'undefined')
+        {
+            const connections = [...io.sockets.adapter.rooms.get('test room')]
+            console.log('disconnect',connections)
+            socket.to('test room').emit(EventConstants.LEAVE, connections)
+        }
+        else
+        {
+            socket.to('test room').emit(EventConstants.LEAVE, [])
+        }
         
-        socket.on(EventConstants.JOIN, (name) => {
-            socket.broadcast.emit(EventConstants.JOIN, name)
-        })
-        socket.on(EventConstants.LEAVE, (name) => {
-            socket.broadcast.emit(EventConstants.LEAVE, name)
-        })
+    })
 
-        socket.on(EventConstants.TYPING, (data) => {
-            socket.broadcast.emit(EventConstants.TYPING, data)
-        })
-        socket.on(EventConstants.STOP_TYPING, () => {
-            socket.broadcast.emit(EventConstants.STOP_TYPING)
-        })
+    socket.on(EventConstants.CREATE_ROOM, () => {
+        const roomsList = [...socket.rooms]
 
-        socket.on(EventConstants.PING_SERVER, (data) => {
-            console.log('ping ',data)
-        })
+        const roomId = roomsList.find(value => value.toString() === socket.id)
+        socket.emit(EventConstants.CREATE_ROOM, roomId)
+    })
+
+    socket.on(EventConstants.JOIN, () => {
+        const connections = [...io.sockets.adapter.rooms.get('test room')]
+        console.log('connect',connections)
+        socket.to('test room').emit(EventConstants.JOIN, connections)
+    })
+
+    socket.on(EventConstants.TYPING, (data) => {
+        socket.broadcast.to('test room').emit(EventConstants.TYPING, data)
+    })
+    socket.on(EventConstants.STOP_TYPING, () => {
+        socket.broadcast.to('test room').emit(EventConstants.STOP_TYPING)
+    })
+
+    socket.on(EventConstants.PING_SERVER, (data) => {
+        console.log('ping ', data)
     })
 })
