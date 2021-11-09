@@ -6,51 +6,36 @@ var io = require('socket.io')(4001, {
     }
 })
 const { EventConstants } = require('./src/config/constants.js')
+const { Utility } = require('./src/utils/utils.js')
 
-
+const rooms = {}
 
 io.on(EventConstants.CONNECTION, socket => {
-    socket.join('test room')
 
-    socket.on(EventConstants.CHAT_MESSAGE, (msg) => {
-        socket.broadcast.to('test room').emit(EventConstants.CHAT_MESSAGE, msg)
+    socket.on(EventConstants.CHAT_MESSAGE, (obj) => {
+
+        let lReturnObject = Utility.getUserMemberBySocket(rooms, socket.id)
+        socket.broadcast.to(obj.roomName).emit(EventConstants.CHAT_MESSAGE, { message:obj.msg, userName: lReturnObject.name})
     })
 
     socket.on(EventConstants.DISCONNECT, () => {
-        if(typeof io.sockets.adapter.rooms.get('test room') !== 'undefined')
-        {
-            const connections = [...io.sockets.adapter.rooms.get('test room')]
-            console.log('disconnect',connections)
-            socket.to('test room').emit(EventConstants.LEAVE, connections)
-        }
-        else
-        {
-            socket.to('test room').emit(EventConstants.LEAVE, [])
-        }
-        
+
+        let lReturnObject = Utility.getUserMemberBySocket(rooms, socket.id)
+        socket.to(lReturnObject.roomName).emit(EventConstants.LEAVE, socket.id)
     })
 
-    socket.on(EventConstants.CREATE_ROOM, () => {
-        const roomsList = [...socket.rooms]
+    socket.on(EventConstants.JOIN, (roomData) => {
+        socket.join(roomData.roomName)
 
-        const roomId = roomsList.find(value => value.toString() === socket.id)
-        socket.emit(EventConstants.CREATE_ROOM, roomId)
+        Utility.buildRoomObjectOnJoin(rooms, roomData, socket.id)
+        // console.log(socket.users.length)
+        socket.nsp.to(roomData.roomName).emit(EventConstants.JOIN, rooms[roomData.roomName].users)
     })
 
-    socket.on(EventConstants.JOIN, () => {
-        const connections = [...io.sockets.adapter.rooms.get('test room')]
-        console.log('connect',connections)
-        socket.to('test room').emit(EventConstants.JOIN, connections)
+    socket.on(EventConstants.TYPING, (roomName, data) => {
+        socket.broadcast.to(roomName).emit(EventConstants.TYPING, data)
     })
-
-    socket.on(EventConstants.TYPING, (data) => {
-        socket.broadcast.to('test room').emit(EventConstants.TYPING, data)
-    })
-    socket.on(EventConstants.STOP_TYPING, () => {
-        socket.broadcast.to('test room').emit(EventConstants.STOP_TYPING)
-    })
-
-    socket.on(EventConstants.PING_SERVER, (data) => {
-        console.log('ping ', data)
+    socket.on(EventConstants.STOP_TYPING, (roomName) => {
+        socket.broadcast.to(roomName).emit(EventConstants.STOP_TYPING)
     })
 })
