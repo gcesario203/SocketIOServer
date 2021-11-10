@@ -13,7 +13,7 @@ const ServerCalls = {
 
             return lResponse
         } catch (error) {
-            // console.log(error)
+             console.log(error.response.data.error)
         }
     },
 }
