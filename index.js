@@ -20,7 +20,7 @@ io.on(EventConstants.CONNECTION, socket => {
 
     socket.on(EventConstants.CHAT_MESSAGE, async (obj) => {
 
-        await Utility.saveMessage(obj.roomId, socket.id, obj.msg, rooms)
+        // await Utility.saveMessage(obj.roomId, socket.id, obj.msg, rooms)
 
         let lReturnObject = Utility.getUserMemberBySocket(rooms, socket.id)
 
