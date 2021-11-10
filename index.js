@@ -12,15 +12,19 @@ const rooms = {}
 
 io.on(EventConstants.CONNECTION, socket => {
 
-    socket.on(EventConstants.CHAT_MESSAGE, (obj) => {
+    socket.on(EventConstants.CHAT_MESSAGE, async (obj) => {
+
+        await Utility.saveMessage(obj.roomId, socket.id, obj.msg, rooms)
 
         let lReturnObject = Utility.getUserMemberBySocket(rooms, socket.id)
-        socket.broadcast.to(obj.roomName).emit(EventConstants.CHAT_MESSAGE, { message:obj.msg, userName: lReturnObject.name})
+
+        socket.broadcast.to(obj.roomName).emit(EventConstants.CHAT_MESSAGE, { message:obj.msg, userName: lReturnObject.name, broadcasted: true})
     })
 
     socket.on(EventConstants.DISCONNECT, () => {
 
         let lReturnObject = Utility.getUserMemberBySocket(rooms, socket.id)
+        
         socket.to(lReturnObject.roomName).emit(EventConstants.LEAVE, socket.id)
     })
 

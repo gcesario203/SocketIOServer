@@ -1,3 +1,6 @@
+const { ServerCalls } = require('../api/server.js')
+const { GeneralConstans, MethodsConstants } = require('../config/constants')
+
 const Utility = 
 {
     getUserMemberBySocket: (pRooms, pSocketId) =>{
@@ -53,6 +56,27 @@ const Utility =
 
             pRooms[pClientData.roomName].users.push(lNewObj)
         }
+    },
+
+    async saveMessage(pRoomId, pSocketId, pMsgContent, pRooms)
+    {
+        let lData ={}
+
+        lData.salaId = pRoomId;
+        lData.mensagens = []
+
+        const lUser = this.getUserMemberBySocket(pRooms, pSocketId)
+
+        let lContent = {}
+        lContent.usuarioId = lUser.id
+        lContent.conteudo = pMsgContent
+    
+        lData.mensagens.push(lContent)
+        await ServerCalls.SendMessageUnauth(
+            MethodsConstants.POST,
+            `/messages`,
+            lData
+        )
     }
 }
 
