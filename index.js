@@ -1,4 +1,10 @@
-var io = require('socket.io')(process.env.PORT || 4001, {
+const PORT = process.env.PORT || 4001;
+
+const server = require('express')()
+  .listen(PORT, () => console.log(`Listening on ${PORT}`));
+
+
+var io = require('socket.io')(server || 4001, {
     path: '/',
     cors: {
         origin: "*",
