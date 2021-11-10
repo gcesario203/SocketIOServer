@@ -1,4 +1,4 @@
-var io = require('socket.io')(4001, {
+var io = require('socket.io')(process.env.PORT || 4001, {
     path: '/',
     cors: {
         origin: "*",
